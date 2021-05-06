@@ -1,12 +1,9 @@
 package com.noxmi.youren;
 
-import androidx.appcompat.app.AppCompatActivity;
-
 import android.Manifest;
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.app.ListActivity;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -15,21 +12,15 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Build;
 import android.provider.Settings;
-import android.provider.SyncStateContract;
-import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
-import android.widget.ListAdapter;
-import android.widget.Toast;
+import android.widget.RelativeLayout;
 
-import com.amap.api.maps.AMap;
-import com.amap.api.maps.MapView;
 import com.amap.api.maps.MapsInitializer;
-import com.amap.api.maps.model.CameraPosition;
-import com.noxmi.youren.basicmap.gaodemap;
 import com.noxmi.youren.location.LocationModeSourceActivity;
+import com.noxmi.youren.basicmap.WeatherSearchActivity;
 import com.noxmi.youren.view.FeatureView;
 
 import java.lang.reflect.Method;
@@ -38,7 +29,9 @@ import java.util.List;
 
 public class MainActivity extends Activity {
 
-    Button ditu;
+    Button ditu,zhuye;
+
+    private RelativeLayout mPoiDetail;
     private static class DemoDetails {
         private final int titleId;
         private final int descriptionId;
@@ -100,11 +93,21 @@ public class MainActivity extends Activity {
         //ListAdapter adapter = new CustomArrayAdapter(
         //        this.getApplicationContext(), demos);
         //setListAdapter(adapter);
+        //地图
         ditu=(Button)findViewById(R.id.mapbtn);
         ditu.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View v){
                 Intent intent = new Intent(MainActivity.this,LocationModeSourceActivity.class);
+                startActivity(intent);
+            }
+        });
+        //主页
+        zhuye=(Button)findViewById(R.id.zhuyebtn);
+        zhuye.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View v){
+                Intent intent = new Intent(MainActivity.this,WeatherSearchActivity.class);
                 startActivity(intent);
             }
         });
