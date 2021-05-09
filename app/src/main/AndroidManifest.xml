@@ -16,8 +16,11 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".location.LocationModeSourceActivity">
-        </activity>
+
+        <!--定位-->
+        <activity android:name=".location.LocationModeSourceActivity"/>
+        <!--天气-->
+        <activity android:name=".basicmap.WeatherSearchActivity"/>
         <meta-data android:name="com.amap.api.v2.apikey" android:value="3152b6952ef0eef7411af25df125549e">
         </meta-data>
         <service android:name="com.amap.api.location.APSService"></service>

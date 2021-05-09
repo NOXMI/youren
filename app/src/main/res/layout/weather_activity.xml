@@ -34,53 +34,57 @@
         android:text="@string/report_time"
         android:textColor="#FFFFFF"/>
     </LinearLayout>
-    
-    <LinearLayout 
+
+    <LinearLayout
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:paddingTop="20dp">
-    <TextView 
-        android:id="@+id/weather"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:gravity="center_horizontal" 
-        android:layout_weight="1"
-        android:textSize="30sp"
-        android:textColor="#FFFFFF"/>
-    <TextView 
-        android:id="@+id/temp"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:layout_weight="1"
-        android:gravity="center_horizontal"
-        android:textSize="30sp"
-        android:textColor="#FFFFFF"/>
-    </LinearLayout>  
 
-    <LinearLayout 
+        <TextView
+            android:id="@+id/weather"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center_horizontal"
+            android:textColor="#FFFFFF"
+            android:textSize="30sp" />
+
+        <TextView
+            android:id="@+id/temp"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center_horizontal"
+            android:textColor="#FFFFFF"
+            android:textSize="30sp" />
+    </LinearLayout>
+
+    <LinearLayout
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:paddingTop="10dp"
-        android:paddingLeft="55dp">    
-    <TextView 
-        android:id="@+id/wind"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:layout_weight="1"
-        android:layout_margin="5dp"
-        android:textSize="14sp"
-        android:textColor="#FFFFFF"/>
-    <TextView 
-        android:id="@+id/humidity"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:layout_weight="1"
-        android:layout_margin="5dp"
-        android:textSize="14sp"
-        android:textColor="#FFFFFF"/>
-     </LinearLayout>
+        android:paddingLeft="55dp"
+        android:paddingTop="10dp">
+
+        <TextView
+            android:id="@+id/wind"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="5dp"
+            android:layout_weight="1"
+            android:textColor="#FFFFFF"
+            android:textSize="14sp" />
+
+        <TextView
+            android:id="@+id/humidity"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="5dp"
+            android:layout_weight="1"
+            android:textColor="#FFFFFF"
+            android:textSize="14sp" />
+    </LinearLayout>
     
     <LinearLayout 
         android:layout_width="fill_parent"

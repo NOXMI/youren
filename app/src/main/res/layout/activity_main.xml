@@ -6,6 +6,7 @@
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
+
     <com.amap.api.maps.MapView
         android:id="@+id/map"
         android:layout_width="match_parent"
@@ -49,6 +50,12 @@
             android:layout_height="match_parent"
             android:layout_weight="1"
             android:text="Button" />
+
     </LinearLayout>
 
+    <ImageView
+        android:id="@+id/startimg"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:src="@drawable/bgc"/>
 </RelativeLayout>

@@ -1,10 +1,14 @@
 package com.noxmi.youren.basicmap;
 
 import android.app.Activity;
+import android.app.ProgressDialog;
 import android.os.Bundle;
 import android.widget.TextView;
 
 import com.amap.api.services.core.AMapException;
+import com.amap.api.services.core.LatLonPoint;
+import com.amap.api.services.geocoder.GeocodeSearch;
+import com.amap.api.services.geocoder.RegeocodeQuery;
 import com.amap.api.services.weather.LocalDayWeatherForecast;
 import com.amap.api.services.weather.LocalWeatherForecast;
 import com.amap.api.services.weather.LocalWeatherForecastResult;
@@ -34,7 +38,8 @@ public class WeatherSearchActivity extends Activity implements OnWeatherSearchLi
     private LocalWeatherLive weatherlive;
     private LocalWeatherForecast weatherforecast;
     private List<LocalDayWeatherForecast> forecastlist = null;
-    private String cityname = "北京市";//天气搜索的城市，可以写名称或adcode；
+    private String cityname = "南通市";//天气搜索的城市，可以写名称或adcode；
+    private ProgressDialog progDialog = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -160,5 +165,16 @@ public class WeatherSearchActivity extends Activity implements OnWeatherSearchLi
             forecast += date + "  " + week + "                       " + temp + "\n\n";
         }
         forecasttv.setText(forecast);
+    }
+
+    /**
+     * 显示进度条对话框
+     */
+    public void showDialog() {
+        progDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
+        progDialog.setIndeterminate(false);
+        progDialog.setCancelable(true);
+        progDialog.setMessage("正在获取地址");
+        progDialog.show();
     }
 }
