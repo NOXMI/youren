@@ -143,9 +143,11 @@ public class MainActivity extends Activity implements AMap.OnMyLocationChangeLis
 
         // 如果要设置定位的默认状态，可以在此处进行设置
         MyLocationStyle myLocationStyle = new MyLocationStyle();
-        mainaMap.setMyLocationStyle(myLocationStyle.myLocationType(MyLocationStyle.LOCATION_TYPE_FOLLOW));
+        mainaMap.setMyLocationStyle(myLocationStyle.myLocationType(MyLocationStyle.LOCATION_TYPE_LOCATE));
 
         mainaMap.getUiSettings().setMyLocationButtonEnabled(true);// 设置默认定位按钮是否显示
+        mainaMap.getUiSettings().setCompassEnabled(true);
+        mainaMap.getUiSettings().setRotateGesturesEnabled(true);
         mainaMap.setMyLocationEnabled(true);// 设置为true表示显示定位层并可触发定位，false表示隐藏定位层并不可触发定位，默认是false
 
     }
