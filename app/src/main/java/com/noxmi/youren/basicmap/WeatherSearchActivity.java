@@ -2,7 +2,9 @@ package com.noxmi.youren.basicmap;
 
 import android.app.Activity;
 import android.app.ProgressDialog;
+import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.TextView;
 
 import com.amap.api.services.core.AMapException;
@@ -38,7 +40,7 @@ public class WeatherSearchActivity extends Activity implements OnWeatherSearchLi
     private LocalWeatherLive weatherlive;
     private LocalWeatherForecast weatherforecast;
     private List<LocalDayWeatherForecast> forecastlist = null;
-    private String cityname = "南通市";//天气搜索的城市，可以写名称或adcode；
+    private String cityname = "北京市";//天气搜索的城市，可以写名称或adcode；
     private ProgressDialog progDialog = null;
 
     @Override
@@ -52,7 +54,14 @@ public class WeatherSearchActivity extends Activity implements OnWeatherSearchLi
 
     private void init() {
         TextView city = (TextView) findViewById(R.id.city);
+        //数据传输
+        Intent intent = getIntent();
+        String citynameString = intent.getStringExtra("citynameString");
+        String[] Cname=citynameString.split("省|市");
+        if (citynameString.indexOf("省") >= 0)  cityname=Cname[1]+"市";//省区
+        else cityname=Cname[0]+"市";//直辖市
         city.setText(cityname);
+
         forecasttv = (TextView) findViewById(R.id.forecast);
         reporttime1 = (TextView) findViewById(R.id.reporttime1);
         reporttime2 = (TextView) findViewById(R.id.reporttime2);
@@ -60,6 +69,7 @@ public class WeatherSearchActivity extends Activity implements OnWeatherSearchLi
         Temperature = (TextView) findViewById(R.id.temp);
         wind = (TextView) findViewById(R.id.wind);
         humidity = (TextView) findViewById(R.id.humidity);
+
     }
 
     /**
@@ -67,6 +77,8 @@ public class WeatherSearchActivity extends Activity implements OnWeatherSearchLi
      */
     private void searchforcastsweather() {
         mquery = new WeatherSearchQuery(cityname, WeatherSearchQuery.WEATHER_TYPE_FORECAST);//检索参数为城市和天气类型，实时天气为1、天气预报为2
+
+        Log.e("Cname",cityname);
         mweathersearch = new WeatherSearch(this);
         mweathersearch.setOnWeatherSearchListener(this);
         mweathersearch.setQuery(mquery);

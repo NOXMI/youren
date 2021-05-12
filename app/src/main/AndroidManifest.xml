@@ -17,6 +17,8 @@
             </intent-filter>
         </activity>
 
+        <!--逆向地址-->
+        <activity android:name=".geocoder.ReGeocoderActivity"/>
         <!--定位-->
         <activity android:name=".location.LocationModeSourceActivity"/>
         <!--天气-->

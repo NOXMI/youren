@@ -22,13 +22,30 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
+import com.amap.api.maps.CameraUpdateFactory;
 import com.amap.api.maps.MapView;
 import com.amap.api.maps.MapsInitializer;
 import com.amap.api.maps.model.MyLocationStyle;
+import com.amap.api.services.core.AMapException;
+import com.amap.api.services.core.LatLonPoint;
+import com.amap.api.services.geocoder.GeocodeResult;
+import com.amap.api.services.geocoder.GeocodeSearch;
+import com.amap.api.services.geocoder.RegeocodeAddress;
+import com.amap.api.services.geocoder.RegeocodeQuery;
+import com.amap.api.services.geocoder.RegeocodeResult;
+import com.amap.api.services.weather.LocalWeatherForecastResult;
+import com.amap.api.services.weather.LocalWeatherLive;
+import com.amap.api.services.weather.LocalWeatherLiveResult;
+import com.amap.api.services.weather.WeatherSearch;
+import com.amap.api.services.weather.WeatherSearchQuery;
+import com.noxmi.youren.geocoder.ReGeocoderActivity;
 import com.noxmi.youren.location.LocationModeSourceActivity;
 import com.noxmi.youren.basicmap.WeatherSearchActivity;
+import com.noxmi.youren.util.AMapUtil;
+import com.noxmi.youren.util.ToastUtil;
 import com.noxmi.youren.view.FeatureView;
 import com.amap.api.maps.AMap;
 
@@ -36,14 +53,31 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MainActivity extends Activity implements AMap.OnMyLocationChangeListener{
+public class MainActivity extends Activity
+        implements AMap.OnMyLocationChangeListener, GeocodeSearch.OnGeocodeSearchListener, WeatherSearch.OnWeatherSearchListener {
 
     ImageView Startimg;
-    Button ditu,zhuye;
+    String addressName="定位中",cityname;
+    String[] Cname;
+    Button ditu,zhuye,geren;
     AMap mainaMap;
     MapView mainmapView;
     MyLocationStyle myLocationStyle;
+
+    private TextView reporttime1;
+    private TextView reporttime2;
+    private TextView weather;
+    private TextView Temperature;
+    private TextView wind;
+    private TextView humidity;
+    private WeatherSearchQuery mquery;
+    private WeatherSearch mweathersearch;
+    private LocalWeatherLive weatherlive;
+    public TextView city;
+    public GeocodeSearch geocoderSearch;
     public Location mainlocation;
+    private LatLonPoint latLonPoint = new LatLonPoint(39.90865, 116.39751);
+
     //是否需要检测后台定位权限，设置为true时，如果用户没有给予后台定位权限会弹窗提示
     private boolean needCheckBackLocation = false;
     //如果设置了target > 28，需要增加这个权限，否则不会弹出"始终允许"这个选择框
@@ -54,14 +88,19 @@ public class MainActivity extends Activity implements AMap.OnMyLocationChangeLis
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         mainmapView = (MapView) findViewById(R.id.map);
-        mainmapView.onCreate(savedInstanceState);// 此方法必须重写
+        //mainmapView.onCreate(savedInstanceState);// 此方法必须重写
+
+        geocoderSearch = new GeocodeSearch(this);
+        geocoderSearch.setOnGeocodeSearchListener(this);
+
         inition();
         //地图
         ditu.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View v){
-                Intent intent = new Intent(MainActivity.this,LocationModeSourceActivity.class);
-                startActivity(intent);
+                //Intent intent = new Intent(MainActivity.this, ReGeocoderActivity.class);
+                //startActivity(intent);
+                getAddress(latLonPoint);
             }
         });
         //主页
@@ -69,7 +108,15 @@ public class MainActivity extends Activity implements AMap.OnMyLocationChangeLis
             @Override
             public void onClick(View v){
                 Intent intent = new Intent(MainActivity.this,WeatherSearchActivity.class);
+                intent.putExtra("citynameString", addressName);
                 startActivity(intent);
+            }
+        });
+        //个人
+        geren.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View v){
+                searchliveweather();
             }
         });
     }
@@ -79,10 +126,13 @@ public class MainActivity extends Activity implements AMap.OnMyLocationChangeLis
         myLocationStyle = new MyLocationStyle();
         zhuye=(Button)findViewById(R.id.zhuyebtn);
         ditu=(Button)findViewById(R.id.mapbtn);
+        geren=(Button)findViewById(R.id.zijibtn);
+
         Startimg= (ImageView) findViewById(R.id.startimg);
-        Startimg.animate().alpha(0).setDuration(5000).setListener((null));
+        Startimg.animate().alpha(0).setDuration(3000).setListener((null));
         Startimg.setEnabled(false);
         setTitle("游人" + MapsInitializer.getVersion());
+
         if(Build.VERSION.SDK_INT > 28
                 && getApplicationContext().getApplicationInfo().targetSdkVersion > 28) {
             needPermissions = new String[] {
@@ -101,7 +151,13 @@ public class MainActivity extends Activity implements AMap.OnMyLocationChangeLis
         }
         //设置SDK 自带定位消息监听
         mainaMap.setOnMyLocationChangeListener(this);
-
+        //天气简版
+        reporttime1 = (TextView) findViewById(R.id.reporttime1);
+        weather = (TextView) findViewById(R.id.weather);
+        Temperature = (TextView) findViewById(R.id.temp);
+        wind = (TextView) findViewById(R.id.wind);
+        humidity = (TextView) findViewById(R.id.humidity);
+        city = (TextView) findViewById(R.id.city);
     }
     /*************************************** 定位******************************************************/
 
@@ -110,6 +166,9 @@ public class MainActivity extends Activity implements AMap.OnMyLocationChangeLis
         // 定位回调监听
         if(location != null) {
             Log.e("amap", "onMyLocationChange 定位成功， lat: " + location.getLatitude() + " lon: " + location.getLongitude());
+            latLonPoint.setLatitude(location.getLatitude());
+            latLonPoint.setLongitude(location.getLongitude());
+            getAddress(latLonPoint);
             Bundle bundle = location.getExtras();
             if(bundle != null) {
                 int errorCode = bundle.getInt(MyLocationStyle.ERROR_CODE);
@@ -357,5 +416,67 @@ public class MainActivity extends Activity implements AMap.OnMyLocationChangeLis
         } catch (Throwable e) {
             e.printStackTrace();
         }
+    }
+    public void getAddress(final LatLonPoint latLonPoint) {
+        RegeocodeQuery query = new RegeocodeQuery(latLonPoint, 200,
+                GeocodeSearch.AMAP);// 第一个参数表示一个Latlng，第二参数表示范围多少米，第三个参数表示是火系坐标系还是GPS原生坐标系
+        geocoderSearch.getFromLocationAsyn(query);// 设置异步逆地理编码请求
+    }
+    public void onRegeocodeSearched(RegeocodeResult result, int rCode) {
+        if (rCode == AMapException.CODE_AMAP_SUCCESS) {
+            if (result != null && result.getRegeocodeAddress() != null
+                    && result.getRegeocodeAddress().getFormatAddress() != null) {
+                addressName = result.getRegeocodeAddress().getFormatAddress();
+
+                String[] Cname=addressName.split("省|市");
+                if (addressName.indexOf("省") >= 0)  cityname=Cname[1]+"市";//省区
+                else cityname=Cname[0]+"市";//直辖市
+                city.setText(cityname);
+                searchliveweather();
+                ToastUtil.show(MainActivity.this, addressName);
+            } else {
+                //ToastUtil.show(MainActivity.this, R.string.no_result);
+            }
+        } else {
+            //ToastUtil.showerror(this, rCode);
+        }
+    }
+
+    @Override
+    public void onGeocodeSearched(GeocodeResult geocodeResult, int i) {
+        return;
+    }
+
+    /**
+     * 实时天气查询
+     */
+    private void searchliveweather() {
+        mquery = new WeatherSearchQuery(cityname, WeatherSearchQuery.WEATHER_TYPE_LIVE);//检索参数为城市和天气类型，实时天气为1、天气预报为2
+        mweathersearch = new WeatherSearch(this);
+        mweathersearch.setOnWeatherSearchListener(this);
+        mweathersearch.setQuery(mquery);
+        mweathersearch.searchWeatherAsyn(); //异步搜索
+    }
+    @Override
+    public void onWeatherLiveSearched(LocalWeatherLiveResult weatherLiveResult, int rCode) {
+        if (rCode == AMapException.CODE_AMAP_SUCCESS) {
+            if (weatherLiveResult != null && weatherLiveResult.getLiveResult() != null) {
+                weatherlive = weatherLiveResult.getLiveResult();
+                reporttime1.setText(weatherlive.getReportTime() + "发布");
+                weather.setText(weatherlive.getWeather());
+                Temperature.setText(weatherlive.getTemperature() + "°");
+                wind.setText(weatherlive.getWindDirection() + "风     " + weatherlive.getWindPower() + "级");
+                humidity.setText("湿度         " + weatherlive.getHumidity() + "%");
+            } else {
+                ToastUtil.show(MainActivity.this, R.string.no_result);
+            }
+        } else {
+            ToastUtil.showerror(MainActivity.this, rCode);
+        }
+    }
+
+    @Override
+    public void onWeatherForecastSearched(LocalWeatherForecastResult localWeatherForecastResult, int i) {
+
     }
 }
