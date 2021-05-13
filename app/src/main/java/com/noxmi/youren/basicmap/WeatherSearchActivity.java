@@ -77,8 +77,6 @@ public class WeatherSearchActivity extends Activity implements OnWeatherSearchLi
      */
     private void searchforcastsweather() {
         mquery = new WeatherSearchQuery(cityname, WeatherSearchQuery.WEATHER_TYPE_FORECAST);//检索参数为城市和天气类型，实时天气为1、天气预报为2
-
-        Log.e("Cname",cityname);
         mweathersearch = new WeatherSearch(this);
         mweathersearch.setOnWeatherSearchListener(this);
         mweathersearch.setQuery(mquery);

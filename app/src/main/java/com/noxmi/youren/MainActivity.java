@@ -4,66 +4,72 @@ import android.Manifest;
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
-import android.media.Image;
 import android.net.Uri;
-import android.os.Bundle;
 import android.os.Build;
-import android.os.Handler;
+import android.os.Bundle;
 import android.provider.Settings;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.View;
-import android.view.ViewGroup;
-import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ImageView;
-import android.widget.RelativeLayout;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.amap.api.maps.CameraUpdateFactory;
+import androidx.cardview.widget.CardView;
+import androidx.coordinatorlayout.widget.CoordinatorLayout;
+import androidx.viewpager.widget.ViewPager;
+
+import com.amap.api.maps.AMap;
 import com.amap.api.maps.MapView;
 import com.amap.api.maps.MapsInitializer;
 import com.amap.api.maps.model.MyLocationStyle;
 import com.amap.api.services.core.AMapException;
 import com.amap.api.services.core.LatLonPoint;
+import com.amap.api.services.core.PoiItem;
+import com.amap.api.services.core.SuggestionCity;
 import com.amap.api.services.geocoder.GeocodeResult;
 import com.amap.api.services.geocoder.GeocodeSearch;
-import com.amap.api.services.geocoder.RegeocodeAddress;
 import com.amap.api.services.geocoder.RegeocodeQuery;
 import com.amap.api.services.geocoder.RegeocodeResult;
+import com.amap.api.services.poisearch.PoiResult;
+import com.amap.api.services.poisearch.PoiSearch;
 import com.amap.api.services.weather.LocalWeatherForecastResult;
 import com.amap.api.services.weather.LocalWeatherLive;
 import com.amap.api.services.weather.LocalWeatherLiveResult;
 import com.amap.api.services.weather.WeatherSearch;
 import com.amap.api.services.weather.WeatherSearchQuery;
-import com.noxmi.youren.geocoder.ReGeocoderActivity;
-import com.noxmi.youren.location.LocationModeSourceActivity;
+import com.mbsgood.viewpaperslip.FlipViewPaper;
+import com.mbsgood.viewpaperslip.utils.CommonUtils;
 import com.noxmi.youren.basicmap.WeatherSearchActivity;
-import com.noxmi.youren.util.AMapUtil;
+import com.noxmi.youren.location.LocationModeSourceActivity;
 import com.noxmi.youren.util.ToastUtil;
-import com.noxmi.youren.view.FeatureView;
-import com.amap.api.maps.AMap;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
 public class MainActivity extends Activity
-        implements AMap.OnMyLocationChangeListener, GeocodeSearch.OnGeocodeSearchListener, WeatherSearch.OnWeatherSearchListener {
+        implements AMap.OnMyLocationChangeListener, GeocodeSearch.OnGeocodeSearchListener, WeatherSearch.OnWeatherSearchListener
+        , PoiSearch.OnPoiSearchListener {
 
     ImageView Startimg;
     String addressName="定位中",cityname;
     String[] Cname;
     Button ditu,zhuye,geren;
+    ViewPager viewPager;
     AMap mainaMap;
     MapView mainmapView;
     MyLocationStyle myLocationStyle;
-
+    ArrayList<String> list=new ArrayList<>();
+    ArrayList<View> views=new ArrayList<>();
+    LinearLayout Downbuttontab,Wethertab;
+    int preposirion=0,currentPage;
     private TextView reporttime1;
     private TextView reporttime2;
     private TextView weather;
@@ -77,6 +83,9 @@ public class MainActivity extends Activity
     public GeocodeSearch geocoderSearch;
     public Location mainlocation;
     private LatLonPoint latLonPoint = new LatLonPoint(39.90865, 116.39751);
+    private PoiSearch.Query query;// Poi查询条件类
+    private PoiSearch poiSearch;// POI搜索
+    private PoiResult poiResult; // poi返回的结果
 
     //是否需要检测后台定位权限，设置为true时，如果用户没有给予后台定位权限会弹窗提示
     private boolean needCheckBackLocation = false;
@@ -94,22 +103,20 @@ public class MainActivity extends Activity
         geocoderSearch.setOnGeocodeSearchListener(this);
 
         inition();
+
         //地图
         ditu.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View v){
-                //Intent intent = new Intent(MainActivity.this, ReGeocoderActivity.class);
-                //startActivity(intent);
-                getAddress(latLonPoint);
+                Intent intent = new Intent(MainActivity.this, LocationModeSourceActivity.class);
+                startActivity(intent);
+                //getAddress(latLonPoint);
             }
         });
         //主页
         zhuye.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View v){
-                Intent intent = new Intent(MainActivity.this,WeatherSearchActivity.class);
-                intent.putExtra("citynameString", addressName);
-                startActivity(intent);
             }
         });
         //个人
@@ -127,10 +134,10 @@ public class MainActivity extends Activity
         zhuye=(Button)findViewById(R.id.zhuyebtn);
         ditu=(Button)findViewById(R.id.mapbtn);
         geren=(Button)findViewById(R.id.zijibtn);
+        Downbuttontab=(LinearLayout)findViewById(R.id.bottom_tab_layout) ;
+        Wethertab=(LinearLayout)findViewById(R.id.weathertab);
 
         Startimg= (ImageView) findViewById(R.id.startimg);
-        Startimg.animate().alpha(0).setDuration(3000).setListener((null));
-        Startimg.setEnabled(false);
         setTitle("游人" + MapsInitializer.getVersion());
 
         if(Build.VERSION.SDK_INT > 28
@@ -158,6 +165,16 @@ public class MainActivity extends Activity
         wind = (TextView) findViewById(R.id.wind);
         humidity = (TextView) findViewById(R.id.humidity);
         city = (TextView) findViewById(R.id.city);
+        Wethertab.setOnClickListener(new View.OnClickListener() {//详细天气
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(MainActivity.this,WeatherSearchActivity.class);
+                intent.putExtra("citynameString", addressName);
+                startActivity(intent);
+            }
+        });
+
+
     }
     /*************************************** 定位******************************************************/
 
@@ -432,7 +449,13 @@ public class MainActivity extends Activity
                 if (addressName.indexOf("省") >= 0)  cityname=Cname[1]+"市";//省区
                 else cityname=Cname[0]+"市";//直辖市
                 city.setText(cityname);
+                //天气
                 searchliveweather();
+                //POI搜索
+                doSearchQuery();
+                //载入完后关闭开始图
+                Startimg.animate().alpha(0).setDuration(1000).setListener((null));
+                Startimg.setEnabled(false);
                 ToastUtil.show(MainActivity.this, addressName);
             } else {
                 //ToastUtil.show(MainActivity.this, R.string.no_result);
@@ -478,5 +501,115 @@ public class MainActivity extends Activity
     @Override
     public void onWeatherForecastSearched(LocalWeatherForecastResult localWeatherForecastResult, int i) {
 
+    }
+
+    @Override
+    public void onPoiSearched(PoiResult result, int rCode) {
+        if (rCode == AMapException.CODE_AMAP_SUCCESS) {
+            if (result != null && result.getQuery() != null) {// 搜索poi的结果
+                if (result.getQuery().equals(query)) {// 是否是同一条
+                    poiResult = result;
+                    // 取得搜索到的poiitems有多少页
+                    List<PoiItem> poiItems = poiResult.getPois();// 取得第一页的poiitem数据，页数从数字0开始
+                    List<SuggestionCity> suggestionCities = poiResult
+                            .getSearchSuggestionCitys();// 当搜索不到poiitem数据时，会返回含有搜索关键字的城市信息
+                    if (poiItems != null && poiItems.size() > 0) {
+                        Poirefresh(poiResult);
+                    } else if (suggestionCities != null
+                            && suggestionCities.size() > 0) {
+                        ToastUtil.show(this,
+                                R.string.no_result);
+                    } else {
+                        ToastUtil.show(this,
+                                R.string.no_result);
+                    }
+                }
+            } else {
+                ToastUtil.show(this,
+                        R.string.no_result);
+            }
+        } else {
+            ToastUtil.showerror(this, rCode);
+        }
+
+    }
+
+    @Override
+    public void onPoiItemSearched(PoiItem poiItem, int i) {
+
+    }
+    /**
+     * 开始进行poi搜索
+     */
+    protected void doSearchQuery() {
+        currentPage = 0;
+        query = new PoiSearch.Query("旅游", "", cityname);
+        // 第一个参数表示搜索字符串，第二个参数表示poi搜索类型，第三个参数表示poi搜索区域（空字符串代表全国）
+        query.setPageSize(10);// 设置每页最多返回多少条poiitem
+        query.setPageNum(currentPage);// 设置查第一页
+
+        poiSearch = new PoiSearch(this, query);
+        poiSearch.setOnPoiSearchListener(this);
+        poiSearch.searchPOIAsyn();
+    }
+    public void Poirefresh(PoiResult POIR){
+//卡片
+        for(int i=0;i<10;i++){
+            list.add("test"+i);
+        }
+        viewPager = (ViewPager) findViewById(R.id.viewpager);
+        CoordinatorLayout.LayoutParams params = (CoordinatorLayout.LayoutParams) viewPager.getLayoutParams();
+        params.width= com.mbsgood.viewpaperslip.utils.CommonUtils.getScreenWidth(this)-CommonUtils.dp2px(this,80);
+        params.setMargins(CommonUtils.dp2px(this,16),
+                CommonUtils.dp2px(this,20+16),
+                CommonUtils.dp2px(this,16),
+                CommonUtils.dp2px(this,20+16));
+        viewPager.setLayoutParams(params);
+        viewPager.setPageMargin(CommonUtils.dp2px(this,8));
+        for(int i=0;i<list.size(); i++){
+            CardView cardView= (CardView) LayoutInflater.from(this).inflate(R.layout.cardview_item,null,false);
+            TextView textView=(TextView) cardView.findViewById(R.id.tv_name);
+            textView.setText("snippet:"+POIR.getPois().get(i).getSnippet()+ System.getProperty ("line.separator")+
+                    "getBusinessArea:"+POIR.getPois().get(i).getBusinessArea()+ System.getProperty ("line.separator")+
+                    "getDirection:"+POIR.getPois().get(i).getDirection()+ System.getProperty ("line.separator")+
+                    "getTitle"+POIR.getPois().get(i).getTitle()+ System.getProperty ("line.separator")+
+                    "getWebsite"+POIR.getPois().get(i).getWebsite()+System.getProperty ("line.separator"));
+            ImageView IMG=(ImageView)cardView.findViewById(R.id.SITEIMG) ;
+            cardView.setTag(textView);
+            views.add(cardView);
+
+            textView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    Log.e("clic","clicked");
+                }
+            });
+        }
+        FlipViewPaper flipViewPaper=new FlipViewPaper(views);
+        viewPager.setAdapter(flipViewPaper);
+        viewPager.setOffscreenPageLimit(2);viewPager.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
+            @Override
+            public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {//position第几页
+
+                //Log.e("onPageScrolled","position "+position+"positionOffset"+positionOffset+"positionOffsetPixels"+positionOffsetPixels);
+                if(position-preposirion==1){
+                    Downbuttontab.animate().alpha(0).setDuration(500).setListener(null);
+                }
+                else {
+                    Downbuttontab.animate().alpha(1).setDuration(500).setListener(null);
+                }
+                preposirion=position;
+            }
+
+            @Override
+            public void onPageSelected(int position) {
+
+            }
+
+            @Override
+            public void onPageScrollStateChanged(int state) {
+
+            }
+        });
     }
 }
