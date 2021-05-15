@@ -7,10 +7,14 @@ import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.location.Location;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.provider.Settings;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -50,7 +54,11 @@ import com.noxmi.youren.basicmap.WeatherSearchActivity;
 import com.noxmi.youren.location.LocationModeSourceActivity;
 import com.noxmi.youren.util.ToastUtil;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.Method;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -58,7 +66,7 @@ public class MainActivity extends Activity
         implements AMap.OnMyLocationChangeListener, GeocodeSearch.OnGeocodeSearchListener, WeatherSearch.OnWeatherSearchListener
         , PoiSearch.OnPoiSearchListener {
 
-    ImageView Startimg;
+    ImageView Startimg,show;
     String addressName="定位中",cityname;
     String[] Cname;
     Button ditu,zhuye,geren;
@@ -86,6 +94,33 @@ public class MainActivity extends Activity
     private PoiSearch.Query query;// Poi查询条件类
     private PoiSearch poiSearch;// POI搜索
     private PoiResult poiResult; // poi返回的结果
+    Bitmap bitmap;//得到获取的图片
+    Handler handler = new Handler(){
+         @Override
+         public void handleMessage(Message msg) {
+             super.handleMessage(msg);
+             show.setImageBitmap(bitmap);
+         }
+     };
+
+    Thread thread = new Thread(){
+         @Override
+         public void run() {
+             super.run();
+             try {
+                 //URL中放的是图片的地址，图片地址随便在网上找一张图片，右键图片就可以复制了，这里需要捕捉异常
+                 URL url = new URL("https://img1.qunarzz.com/travel/d8/1702/85/8eba3c25781398b5.jpg_r_680x510x95_839186f7.jpg");
+                 InputStream inputStream = url.openStream();
+                 bitmap = BitmapFactory.decodeStream(inputStream);
+                 handler.sendEmptyMessage(1);//主线程中是不能更新的，所以得发送消息到handler，到handleMessage方法中设置获取得到的图片
+                 inputStream.close();
+             } catch (MalformedURLException e) {
+                 e.printStackTrace();
+             } catch (IOException e) {
+                 e.printStackTrace();
+             }
+         }
+     };
 
     //是否需要检测后台定位权限，设置为true时，如果用户没有给予后台定位权限会弹窗提示
     private boolean needCheckBackLocation = false;
@@ -130,6 +165,8 @@ public class MainActivity extends Activity
 
     /*************************************** 初始化******************************************************/
     public void inition(){
+        show=(ImageView) findViewById(R.id.SHOW);
+        thread.start();
         myLocationStyle = new MyLocationStyle();
         zhuye=(Button)findViewById(R.id.zhuyebtn);
         ditu=(Button)findViewById(R.id.mapbtn);
@@ -569,12 +606,16 @@ public class MainActivity extends Activity
         for(int i=0;i<list.size(); i++){
             CardView cardView= (CardView) LayoutInflater.from(this).inflate(R.layout.cardview_item,null,false);
             TextView textView=(TextView) cardView.findViewById(R.id.tv_name);
-            textView.setText("snippet:"+POIR.getPois().get(i).getSnippet()+ System.getProperty ("line.separator")+
-                    "getBusinessArea:"+POIR.getPois().get(i).getBusinessArea()+ System.getProperty ("line.separator")+
-                    "getDirection:"+POIR.getPois().get(i).getDirection()+ System.getProperty ("line.separator")+
-                    "getTitle"+POIR.getPois().get(i).getTitle()+ System.getProperty ("line.separator")+
-                    "getWebsite"+POIR.getPois().get(i).getWebsite()+System.getProperty ("line.separator"));
+            textView.setText(
+                    "名称:"+POIR.getPois().get(i).getTitle()+ System.getProperty ("line.separator")+
+                    "地址:"+POIR.getPois().get(i).getSnippet()+ System.getProperty ("line.separator")+
+                    "商圈:"+POIR.getPois().get(i).getBusinessArea()+ System.getProperty ("line.separator")+
+                    "导航:"+POIR.getPois().get(i).getDirection()+ System.getProperty ("line.separator")+
+                    "网页"+POIR.getPois().get(i).getWebsite()+System.getProperty ("line.separator")+
+                    "图片数量："+POIR.getPois().get(i).getPhotos().size()+System.getProperty ("line.separator")+
+                    POIR.getSearchSuggestionCitys().size());
             ImageView IMG=(ImageView)cardView.findViewById(R.id.SITEIMG) ;
+            IMG=show;
             cardView.setTag(textView);
             views.add(cardView);
 
@@ -611,5 +652,22 @@ public class MainActivity extends Activity
 
             }
         });
+    }
+    public Bitmap PICSET()
+    {
+        Bitmap BM=null;
+        try{
+            URL url=new URL("https://img1.qunarzz.com/travel/d8/1702/85/8eba3c25781398b5.jpg_r_680x510x95_839186f7.jpg");
+            // 从URL获取对应资源的 InputStream
+            InputStream inputStream = url.openStream();
+            // 用inputStream来初始化一个Bitmap 虽然此处是Bitmap，但是URL不一定非得是Bitmap
+            BM = BitmapFactory.decodeStream(inputStream);
+            // 关闭 InputStream
+            inputStream.close();
+            return BM;
+        }catch (IOException e) {
+            e.printStackTrace();
+        }
+        return BM;
     }
 }
