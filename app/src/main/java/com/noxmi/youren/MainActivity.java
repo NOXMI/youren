@@ -4,6 +4,8 @@ import android.Manifest;
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.DownloadManager;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -19,6 +21,8 @@ import android.provider.Settings;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -54,9 +58,16 @@ import com.noxmi.youren.basicmap.WeatherSearchActivity;
 import com.noxmi.youren.location.LocationModeSourceActivity;
 import com.noxmi.youren.util.ToastUtil;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.lang.reflect.Method;
+import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -94,12 +105,13 @@ public class MainActivity extends Activity
     private PoiSearch.Query query;// Poi查询条件类
     private PoiSearch poiSearch;// POI搜索
     private PoiResult poiResult; // poi返回的结果
+    public static final String LatestUrl="https://api.github.com/repos/NOXMI/youren/releases/latest";
     Bitmap bitmap;//得到获取的图片
     Handler handler = new Handler(){
          @Override
          public void handleMessage(Message msg) {
              super.handleMessage(msg);
-             show.setImageBitmap(bitmap);
+             //show.setImageBitmap(bitmap);
          }
      };
 
@@ -108,20 +120,62 @@ public class MainActivity extends Activity
          public void run() {
              super.run();
              try {
-                 //URL中放的是图片的地址，图片地址随便在网上找一张图片，右键图片就可以复制了，这里需要捕捉异常
-                 URL url = new URL("https://img1.qunarzz.com/travel/d8/1702/85/8eba3c25781398b5.jpg_r_680x510x95_839186f7.jpg");
+                 URL url = new URL("https://img1.qunarzz.com/travel/d4/1704/af/9ec6d621b3f92cb5.jpg_160x120x95_ba3e7b3c.jpg");
                  InputStream inputStream = url.openStream();
                  bitmap = BitmapFactory.decodeStream(inputStream);
                  handler.sendEmptyMessage(1);//主线程中是不能更新的，所以得发送消息到handler，到handleMessage方法中设置获取得到的图片
                  inputStream.close();
              } catch (MalformedURLException e) {
                  e.printStackTrace();
+                 Log.e("fail","MalformedURLException");
              } catch (IOException e) {
                  e.printStackTrace();
+                 Log.e("fail","IOException");
              }
          }
      };
+    Thread thread2=new Thread(){
+        public void run() {
+            try {
 
+                //首先声明url连接对象
+                URL url=new URL(LatestUrl);
+                //获取HttpURLConnection对象
+                HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+                //设置连接超时时间,毫秒为单位
+                connection.setConnectTimeout(5000);
+
+                //http方式
+                connection.setRequestMethod("GET");
+                //获取返回码//200为正常      404 找不到资源
+                int code = connection.getResponseCode();
+                if(code==200){
+
+                    //获取字节流
+                    InputStream inputStream = connection.getInputStream();
+                    //解析字节流
+                    BufferedReader bf=new BufferedReader(new InputStreamReader(inputStream, "utf-8"));
+                    StringBuilder sb=new StringBuilder();
+                    String s=null;
+                    while ((s=bf.readLine())!=null) {
+                        sb.append(s+"\r\n");
+                    }
+                    //解析json对象
+                    JSONObject jsonObject = new JSONObject(sb.toString());
+                    JSONObject assets =new JSONObject(jsonObject.getJSONArray("assets").get(0).toString());
+                    Log.e("url",assets.getString("browser_download_url"));
+
+                }
+                else{
+                    Toast.makeText(MainActivity.this,"无法检测更新",Toast.LENGTH_SHORT);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+                Log.e("error","fail");
+            }
+        }
+
+    };
     //是否需要检测后台定位权限，设置为true时，如果用户没有给予后台定位权限会弹窗提示
     private boolean needCheckBackLocation = false;
     //如果设置了target > 28，需要增加这个权限，否则不会弹出"始终允许"这个选择框
@@ -158,15 +212,36 @@ public class MainActivity extends Activity
         geren.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View v){
-                searchliveweather();
+                //downLoadApk(MainActivity.this,"https://github.com/NOXMI/youren/releases/latest");
             }
         });
     }
-
+    /**
+     * 该方法是调用了系统的下载管理器
+     */
+    public void downLoadApk(Context context, String url){
+        /**
+         * 在这里返回的 reference 变量是系统为当前的下载请求分配的一个唯一的ID，
+         * 我们可以通过这个ID重新获得这个下载任务，进行一些自己想要进行的操作
+         * 或者查询下载的状态以及取消下载等等
+         */
+        Log.e("download","loading");
+        Uri uri = Uri.parse(url);        //下载连接
+        DownloadManager manager = (DownloadManager) context.getSystemService(context.DOWNLOAD_SERVICE);  //得到系统的下载管理
+        DownloadManager.Request requestApk = new DownloadManager.Request(uri);  //得到连接请求对象
+        requestApk.setAllowedNetworkTypes(DownloadManager.Request.NETWORK_MOBILE);   //指定在什么网络下进行下载，这里我指定了WIFI网络
+        requestApk.setDestinationInExternalPublicDir(context.getPackageName()+"/myDownLoad","xiaoyuantong.apk");  //制定下载文件的保存路径，我这里保存到根目录
+        requestApk.setVisibleInDownloadsUi(true);  //设置显示下载界面
+        requestApk.allowScanningByMediaScanner();  //表示允许MediaScanner扫描到这个文件，默认不允许。
+        requestApk.setTitle("xxx更新下载");      //设置下载中通知栏的提示消息
+        requestApk.setDescription("xxx更新下载");//设置设置下载中通知栏提示的介绍
+        long downLoadId = manager.enqueue(requestApk);               //启动下载,该方法返回系统为当前下载请求分配的一个唯一的ID
+    }
     /*************************************** 初始化******************************************************/
     public void inition(){
         show=(ImageView) findViewById(R.id.SHOW);
         thread.start();
+        thread2.start();
         myLocationStyle = new MyLocationStyle();
         zhuye=(Button)findViewById(R.id.zhuyebtn);
         ditu=(Button)findViewById(R.id.mapbtn);
@@ -615,7 +690,7 @@ public class MainActivity extends Activity
                     "图片数量："+POIR.getPois().get(i).getPhotos().size()+System.getProperty ("line.separator")+
                     POIR.getSearchSuggestionCitys().size());
             ImageView IMG=(ImageView)cardView.findViewById(R.id.SITEIMG) ;
-            IMG=show;
+            IMG.setImageBitmap(bitmap);
             cardView.setTag(textView);
             views.add(cardView);
 
