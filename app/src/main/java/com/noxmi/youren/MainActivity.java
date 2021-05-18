@@ -55,17 +55,22 @@ import com.amap.api.services.weather.LocalWeatherLiveResult;
 import com.amap.api.services.weather.WeatherSearch;
 import com.amap.api.services.weather.WeatherSearchQuery;
 import com.noxmi.youren.card.FlipViewPaper;
+import com.noxmi.youren.gonglue.gongluemain;
+import com.noxmi.youren.setting.settingmain;
 import com.noxmi.youren.update.download;
+import com.noxmi.youren.update.updateinfo;
 import com.noxmi.youren.util.CommonUtils;
 import com.noxmi.youren.basicmap.WeatherSearchActivity;
 import com.noxmi.youren.location.LocationModeSourceActivity;
 import com.noxmi.youren.util.ToastUtil;
+import com.noxmi.youren.update.updateinfo;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -76,13 +81,14 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
+
 public class MainActivity extends Activity
         implements AMap.OnMyLocationChangeListener, GeocodeSearch.OnGeocodeSearchListener, WeatherSearch.OnWeatherSearchListener
         , PoiSearch.OnPoiSearchListener {
 
     ImageView Startimg//开始图片
             ,show;//网络图片
-    String addressName="定位中"//定位图片中转
+    public String addressName="定位中"//定位图片中转
             ,cityname//定位城市名字
             ,Tagname//网络获取程序名字
             ,updialog//网络获取更新日志
@@ -183,7 +189,7 @@ public class MainActivity extends Activity
                     Tagname=jsonObject.getString("tag_name");
                     updialog=jsonObject.getString("body");
                     uppackname=jsonObject.getString("name");
-                    if(!Tagname.equals(getVersionName(MainActivity.this))){
+                    if(!Tagname.equals(updateinfo.getVersionName(MainActivity.this))){
                         //Log.e("up","needup");
                         apkdownloadhandler.sendEmptyMessage(1);//移handler
                     }
@@ -227,16 +233,25 @@ public class MainActivity extends Activity
                 //getAddress(latLonPoint);
             }
         });
-        //主页
+        //攻略
         zhuye.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View v){
+                Intent intent = new Intent(MainActivity.this, gongluemain.class);
+                startActivity(intent);
             }
         });
-        //个人
+        //设置
         geren.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View v){
+                Intent intent = new Intent(MainActivity.this, settingmain.class);
+                intent.putExtra("Tagname", Tagname);
+                intent.putExtra("updialog", updialog);
+                intent.putExtra("uppackname", uppackname);
+                intent.putExtra("Currenttagname", Currenttagname);
+                intent.putExtra("DownloadUrl", DownloadUrl);
+                startActivity(intent);
             }
         });
     }
@@ -678,12 +693,12 @@ public class MainActivity extends Activity
             CardView cardView= (CardView) LayoutInflater.from(this).inflate(R.layout.cardview_item,null,false);
             TextView textView=(TextView) cardView.findViewById(R.id.tv_name);
             textView.setText(
-                    "名称:"+POIR.getPois().get(i).getTitle()+ System.getProperty ("line.separator")+
-                    "地址:"+POIR.getPois().get(i).getSnippet()+ System.getProperty ("line.separator")+
-                    "商圈:"+POIR.getPois().get(i).getBusinessArea()+ System.getProperty ("line.separator")+
-                    "导航:"+POIR.getPois().get(i).getDirection()+ System.getProperty ("line.separator")+
-                    "网页"+POIR.getPois().get(i).getWebsite()+System.getProperty ("line.separator")+
-                    "图片数量："+POIR.getPois().get(i).getPhotos().size()+System.getProperty ("line.separator")+
+                    "名称:"+POIR.getPois().get(i).getTitle()+ "\n"+
+                    "地址:"+POIR.getPois().get(i).getSnippet()+ "\n"+
+                    "商圈:"+POIR.getPois().get(i).getBusinessArea()+ "\n"+
+                    "导航:"+POIR.getPois().get(i).getDirection()+ "\n"+
+                    "网页"+POIR.getPois().get(i).getWebsite()+"\n"+
+                    "图片数量："+POIR.getPois().get(i).getPhotos().size()+"\n"+
                     POIR.getSearchSuggestionCitys().size());
             ImageView IMG=(ImageView)cardView.findViewById(R.id.SITEIMG) ;
             IMG.setImageBitmap(bitmap);
@@ -740,30 +755,5 @@ public class MainActivity extends Activity
             e.printStackTrace();
         }
         return BM;
-    }
-    //版本名
-    public static String getVersionName(Context context) {
-        return getPackageInfo(context).versionName;
-    }
-
-    //版本号
-    public static int getVersionCode(Context context) {
-        return getPackageInfo(context).versionCode;
-    }
-
-    private static PackageInfo getPackageInfo(Context context) {
-        PackageInfo pi = null;
-
-        try {
-            PackageManager pm = context.getPackageManager();
-            pi = pm.getPackageInfo(context.getPackageName(),
-                    PackageManager.GET_CONFIGURATIONS);
-
-            return pi;
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        return pi;
     }
 }

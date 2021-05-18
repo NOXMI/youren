@@ -101,10 +101,6 @@
             android:id="@+id/SHOW"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"/>
-        <WebView
-            android:id="@+id/webView"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"/>
     </LinearLayout>
 
         <androidx.coordinatorlayout.widget.CoordinatorLayout
@@ -113,6 +109,7 @@
             android:clipChildren="false">
 
             <androidx.viewpager.widget.ViewPager
+
                 android:id="@+id/viewpager"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
@@ -149,7 +146,7 @@
             android:layout_height="match_parent"
             android:layout_weight="1"
             android:orientation="vertical"
-            android:text="Button" />
+            android:text="攻略" />
 
         <Button
             android:id="@+id/mapbtn"
@@ -163,7 +160,7 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_weight="1"
-            android:text="Button" />
+            android:text="设置" />
 
     </LinearLayout>
 

@@ -53,12 +53,29 @@ public class download {
             public void onShow(DialogInterface dialog) {
             }
         });
-        //对话框消失的监听事件
-        dialog.setOnCancelListener(new DialogInterface.OnCancelListener() {
+        dialog.show();
+    }
+    //不需要更新
+    public static void NOneedup(Context context){
+
+        AlertDialog.Builder normalDialog = new AlertDialog.Builder(context);
+        normalDialog.setTitle("更新提示：");
+        normalDialog.setMessage("不需要更新");
+        normalDialog.setIcon(R.mipmap.ic_launcher);
+        normalDialog.setCancelable(true);
+        normalDialog.setPositiveButton("确定", new DialogInterface.OnClickListener() {
             @Override
-            public void onCancel(DialogInterface dialog) {
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.dismiss();
+            }
+        });
+        AlertDialog dialog = normalDialog.create();
+        dialog.setOnShowListener(new DialogInterface.OnShowListener() {
+            @Override
+            public void onShow(DialogInterface dialog) {
             }
         });
         dialog.show();
     }
+
 }
