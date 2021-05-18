@@ -49,16 +49,19 @@ public class gongluemain extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
 
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_gonglue);
+        setContentView(R.layout.recyclepad);
 
         //Log.e("as",list.get(0).toString());
         readCsv("data1.csv");
+        init();
     }
 
     void init(){
         rl = findViewById(R.id.rl);
-        GridLayoutManager layoutManager = new GridLayoutManager(this, 2);
+        GridLayoutManager layoutManager = new GridLayoutManager(this, 1);
         rl.setLayoutManager(layoutManager);
+        gonglueadapter adapter = new gonglueadapter(list);
+        rl.setAdapter(adapter);
     }
     private void readCsv(String path) {
         try {
