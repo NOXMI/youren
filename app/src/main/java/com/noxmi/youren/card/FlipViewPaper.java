@@ -1,4 +1,4 @@
-package com.mbsgood.viewpaperslip;
+package com.noxmi.youren.card;
 
 import androidx.viewpager.widget.PagerAdapter;
 import androidx.viewpager.widget.ViewPager;

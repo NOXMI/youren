@@ -1,4 +1,4 @@
-package com.mbsgood.viewpaperslip.utils;
+package com.noxmi.youren.util;
 
 import android.content.Context;
 import android.util.DisplayMetrics;

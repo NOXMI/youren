@@ -8,11 +8,13 @@ import android.app.DownloadManager;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.location.Location;
 import android.net.Uri;
+import android.nfc.Tag;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -52,8 +54,9 @@ import com.amap.api.services.weather.LocalWeatherLive;
 import com.amap.api.services.weather.LocalWeatherLiveResult;
 import com.amap.api.services.weather.WeatherSearch;
 import com.amap.api.services.weather.WeatherSearchQuery;
-import com.mbsgood.viewpaperslip.FlipViewPaper;
-import com.mbsgood.viewpaperslip.utils.CommonUtils;
+import com.noxmi.youren.card.FlipViewPaper;
+import com.noxmi.youren.update.download;
+import com.noxmi.youren.util.CommonUtils;
 import com.noxmi.youren.basicmap.WeatherSearchActivity;
 import com.noxmi.youren.location.LocationModeSourceActivity;
 import com.noxmi.youren.util.ToastUtil;
@@ -77,44 +80,55 @@ public class MainActivity extends Activity
         implements AMap.OnMyLocationChangeListener, GeocodeSearch.OnGeocodeSearchListener, WeatherSearch.OnWeatherSearchListener
         , PoiSearch.OnPoiSearchListener {
 
-    ImageView Startimg,show;
-    String addressName="定位中",cityname;
-    String[] Cname;
-    Button ditu,zhuye,geren;
-    ViewPager viewPager;
-    AMap mainaMap;
-    MapView mainmapView;
-    MyLocationStyle myLocationStyle;
-    ArrayList<String> list=new ArrayList<>();
-    ArrayList<View> views=new ArrayList<>();
-    LinearLayout Downbuttontab,Wethertab;
-    int preposirion=0,currentPage;
-    private TextView reporttime1;
-    private TextView reporttime2;
-    private TextView weather;
-    private TextView Temperature;
-    private TextView wind;
-    private TextView humidity;
-    private WeatherSearchQuery mquery;
+    ImageView Startimg//开始图片
+            ,show;//网络图片
+    String addressName="定位中"//定位图片中转
+            ,cityname//定位城市名字
+            ,Tagname//网络获取程序名字
+            ,updialog//网络获取更新日志
+            ,uppackname//安装包名称
+            ,Currenttagname//现版本名字
+            ,DownloadUrl;//下载链接
+    Button ditu,zhuye,geren;//主页按钮
+    ViewPager viewPager;//卡片载体
+    AMap mainaMap;//主页地图，天气定位载体
+    MapView mainmapView;//主页地图载体
+    MyLocationStyle myLocationStyle;//定位模式
+    ArrayList<String> list=new ArrayList<>();//附近POI
+    ArrayList<View> views=new ArrayList<>();//卡片容器
+    LinearLayout Downbuttontab,Wethertab;//按钮框，天气框
+    int preposirion=0//前一个卡片位置翻页按钮隐形判断
+            ,currentPage;//现在卡片位置
+    private TextView reporttime1,weather,Temperature,wind,humidity//天气简版
+                        ,city;//城市名字板
+    private WeatherSearchQuery mquery;//天气查询
     private WeatherSearch mweathersearch;
     private LocalWeatherLive weatherlive;
-    public TextView city;
-    public GeocodeSearch geocoderSearch;
-    public Location mainlocation;
+    public GeocodeSearch geocoderSearch;//逆向定位
+    public Location mainlocation;//主要定位
     private LatLonPoint latLonPoint = new LatLonPoint(39.90865, 116.39751);
     private PoiSearch.Query query;// Poi查询条件类
     private PoiSearch poiSearch;// POI搜索
     private PoiResult poiResult; // poi返回的结果
     public static final String LatestUrl="https://api.github.com/repos/NOXMI/youren/releases/latest";
     Bitmap bitmap;//得到获取的图片
+
     Handler handler = new Handler(){
          @Override
          public void handleMessage(Message msg) {
              super.handleMessage(msg);
              //show.setImageBitmap(bitmap);
          }
-     };
-
+     },
+    apkdownloadhandler=new Handler() {//apk更新下载
+        @Override
+        public void handleMessage(Message msg) {
+            super.handleMessage(msg);
+            //downLoadApk(MainActivity.this,DownloadUrl);
+            download.downloadask(MainActivity.this,Tagname,updialog,DownloadUrl,Tagname);
+        }
+    };
+    //网络图片获取
     Thread thread = new Thread(){
          @Override
          public void run() {
@@ -134,8 +148,10 @@ public class MainActivity extends Activity
              }
          }
      };
-    Thread thread2=new Thread(){
+    //自动更新检查
+    Thread updatecheck=new Thread(){
         public void run() {
+            super.run();
             try {
 
                 //首先声明url连接对象
@@ -163,7 +179,17 @@ public class MainActivity extends Activity
                     //解析json对象
                     JSONObject jsonObject = new JSONObject(sb.toString());
                     JSONObject assets =new JSONObject(jsonObject.getJSONArray("assets").get(0).toString());
-                    Log.e("url",assets.getString("browser_download_url"));
+                    DownloadUrl=assets.getString("browser_download_url");
+                    Tagname=jsonObject.getString("tag_name");
+                    updialog=jsonObject.getString("body");
+                    uppackname=jsonObject.getString("name");
+                    if(!Tagname.equals(getVersionName(MainActivity.this))){
+                        //Log.e("up","needup");
+                        apkdownloadhandler.sendEmptyMessage(1);//移handler
+                    }
+                    else{
+                        //Log.e("up","noneed");
+                    }
 
                 }
                 else{
@@ -174,7 +200,6 @@ public class MainActivity extends Activity
                 Log.e("error","fail");
             }
         }
-
     };
     //是否需要检测后台定位权限，设置为true时，如果用户没有给予后台定位权限会弹窗提示
     private boolean needCheckBackLocation = false;
@@ -212,36 +237,15 @@ public class MainActivity extends Activity
         geren.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View v){
-                //downLoadApk(MainActivity.this,"https://github.com/NOXMI/youren/releases/latest");
             }
         });
     }
-    /**
-     * 该方法是调用了系统的下载管理器
-     */
-    public void downLoadApk(Context context, String url){
-        /**
-         * 在这里返回的 reference 变量是系统为当前的下载请求分配的一个唯一的ID，
-         * 我们可以通过这个ID重新获得这个下载任务，进行一些自己想要进行的操作
-         * 或者查询下载的状态以及取消下载等等
-         */
-        Log.e("download","loading");
-        Uri uri = Uri.parse(url);        //下载连接
-        DownloadManager manager = (DownloadManager) context.getSystemService(context.DOWNLOAD_SERVICE);  //得到系统的下载管理
-        DownloadManager.Request requestApk = new DownloadManager.Request(uri);  //得到连接请求对象
-        requestApk.setAllowedNetworkTypes(DownloadManager.Request.NETWORK_MOBILE);   //指定在什么网络下进行下载，这里我指定了WIFI网络
-        requestApk.setDestinationInExternalPublicDir(context.getPackageName()+"/myDownLoad","xiaoyuantong.apk");  //制定下载文件的保存路径，我这里保存到根目录
-        requestApk.setVisibleInDownloadsUi(true);  //设置显示下载界面
-        requestApk.allowScanningByMediaScanner();  //表示允许MediaScanner扫描到这个文件，默认不允许。
-        requestApk.setTitle("xxx更新下载");      //设置下载中通知栏的提示消息
-        requestApk.setDescription("xxx更新下载");//设置设置下载中通知栏提示的介绍
-        long downLoadId = manager.enqueue(requestApk);               //启动下载,该方法返回系统为当前下载请求分配的一个唯一的ID
-    }
-    /*************************************** 初始化******************************************************/
+    //初始化
     public void inition(){
         show=(ImageView) findViewById(R.id.SHOW);
         thread.start();
-        thread2.start();
+        updatecheck.start();//检查更新
+
         myLocationStyle = new MyLocationStyle();
         zhuye=(Button)findViewById(R.id.zhuyebtn);
         ditu=(Button)findViewById(R.id.mapbtn);
@@ -288,8 +292,8 @@ public class MainActivity extends Activity
 
 
     }
-    /*************************************** 定位******************************************************/
 
+    //定位
     @Override
     public void onMyLocationChange(Location location) {
         // 定位回调监听
@@ -323,10 +327,7 @@ public class MainActivity extends Activity
         }
     }
 
-
-    /**
-     * 设置一些amap的属性
-     */
+    //地图设置
     private void setUpMap() {
 
         // 如果要设置定位的默认状态，可以在此处进行设置
@@ -339,27 +340,8 @@ public class MainActivity extends Activity
         mainaMap.setMyLocationEnabled(true);// 设置为true表示显示定位层并可触发定位，false表示隐藏定位层并不可触发定位，默认是false
 
     }
-/*************************************** 权限检查******************************************************/
 
-    /**
-     * 需要进行检测的权限数组
-     */
-    protected String[] needPermissions = {
-            Manifest.permission.ACCESS_COARSE_LOCATION,
-            Manifest.permission.ACCESS_FINE_LOCATION,
-            Manifest.permission.WRITE_EXTERNAL_STORAGE,
-            Manifest.permission.READ_EXTERNAL_STORAGE,
-            Manifest.permission.READ_PHONE_STATE,
-            BACK_LOCATION_PERMISSION
-    };
-
-    private static final int PERMISSON_REQUESTCODE = 0;
-
-    /**
-     * 判断是否需要检测，防止不停的弹框
-     */
-    private boolean isNeedCheck = true;
-
+    //权限检查
     @Override
     protected void onResume() {
         try{
@@ -373,7 +355,19 @@ public class MainActivity extends Activity
             e.printStackTrace();
         }
     }
-
+    //权限检查
+    protected String[] needPermissions =
+            {
+                    Manifest.permission.ACCESS_COARSE_LOCATION,
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                    Manifest.permission.READ_EXTERNAL_STORAGE,
+                    Manifest.permission.READ_PHONE_STATE,
+                    BACK_LOCATION_PERMISSION
+            };
+    //判断是否需要检测，防止不停的弹框
+    private boolean isNeedCheck = true;
+    private static final int PERMISSON_REQUESTCODE = 0;
     /**
      * @param
      * @since 2.5.0
@@ -471,8 +465,7 @@ public class MainActivity extends Activity
     }
 
     @TargetApi(23)
-    public void onRequestPermissionsResult(int requestCode,
-                                           String[] permissions, int[] paramArrayOfInt) {
+    public void onRequestPermissionsResult(int requestCode,String[] permissions, int[] paramArrayOfInt) {
         try{
             if (Build.VERSION.SDK_INT >= 23) {
                 if (requestCode == PERMISSON_REQUESTCODE) {
@@ -546,11 +539,14 @@ public class MainActivity extends Activity
             e.printStackTrace();
         }
     }
+
+    //地址获取
     public void getAddress(final LatLonPoint latLonPoint) {
         RegeocodeQuery query = new RegeocodeQuery(latLonPoint, 200,
                 GeocodeSearch.AMAP);// 第一个参数表示一个Latlng，第二参数表示范围多少米，第三个参数表示是火系坐标系还是GPS原生坐标系
         geocoderSearch.getFromLocationAsyn(query);// 设置异步逆地理编码请求
     }
+    //逆向地理获取，程序开启设置
     public void onRegeocodeSearched(RegeocodeResult result, int rCode) {
         if (rCode == AMapException.CODE_AMAP_SUCCESS) {
             if (result != null && result.getRegeocodeAddress() != null
@@ -664,14 +660,14 @@ public class MainActivity extends Activity
         poiSearch.setOnPoiSearchListener(this);
         poiSearch.searchPOIAsyn();
     }
+    //poi卡片
     public void Poirefresh(PoiResult POIR){
-//卡片
         for(int i=0;i<10;i++){
             list.add("test"+i);
         }
         viewPager = (ViewPager) findViewById(R.id.viewpager);
         CoordinatorLayout.LayoutParams params = (CoordinatorLayout.LayoutParams) viewPager.getLayoutParams();
-        params.width= com.mbsgood.viewpaperslip.utils.CommonUtils.getScreenWidth(this)-CommonUtils.dp2px(this,80);
+        params.width= CommonUtils.getScreenWidth(this)-CommonUtils.dp2px(this,80);
         params.setMargins(CommonUtils.dp2px(this,16),
                 CommonUtils.dp2px(this,20+16),
                 CommonUtils.dp2px(this,16),
@@ -728,8 +724,8 @@ public class MainActivity extends Activity
             }
         });
     }
-    public Bitmap PICSET()
-    {
+    //图片设置
+    public Bitmap PICSET(){
         Bitmap BM=null;
         try{
             URL url=new URL("https://img1.qunarzz.com/travel/d8/1702/85/8eba3c25781398b5.jpg_r_680x510x95_839186f7.jpg");
@@ -744,5 +740,30 @@ public class MainActivity extends Activity
             e.printStackTrace();
         }
         return BM;
+    }
+    //版本名
+    public static String getVersionName(Context context) {
+        return getPackageInfo(context).versionName;
+    }
+
+    //版本号
+    public static int getVersionCode(Context context) {
+        return getPackageInfo(context).versionCode;
+    }
+
+    private static PackageInfo getPackageInfo(Context context) {
+        PackageInfo pi = null;
+
+        try {
+            PackageManager pm = context.getPackageManager();
+            pi = pm.getPackageInfo(context.getPackageName(),
+                    PackageManager.GET_CONFIGURATIONS);
+
+            return pi;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return pi;
     }
 }
