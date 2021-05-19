@@ -5,6 +5,9 @@ import android.app.ProgressDialog;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.KeyEvent;
+import android.view.inputmethod.EditorInfo;
+import android.widget.EditText;
 import android.widget.TextView;
 
 import com.amap.api.services.core.AMapException;
@@ -28,6 +31,7 @@ import java.util.List;
  * 天气查询 示例查询
  */
 public class WeatherSearchActivity extends Activity implements OnWeatherSearchListener {
+    private EditText city;
     private TextView forecasttv;
     private TextView reporttime1;
     private TextView reporttime2;
@@ -53,7 +57,7 @@ public class WeatherSearchActivity extends Activity implements OnWeatherSearchLi
     }
 
     private void init() {
-        TextView city = (TextView) findViewById(R.id.city);
+        city = (EditText) findViewById(R.id.EDcity);
         //数据传输
         Intent intent = getIntent();
         String citynameString = intent.getStringExtra("citynameString");
@@ -61,6 +65,17 @@ public class WeatherSearchActivity extends Activity implements OnWeatherSearchLi
         if (citynameString.indexOf("省") >= 0)  cityname=Cname[1]+"市";//省区
         else cityname=Cname[0]+"市";//直辖市
         city.setText(cityname);
+        city.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+            @Override
+            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+                if (actionId == EditorInfo.IME_ACTION_DONE) {
+                    cityname=city.getText().toString();
+                    searchliveweather();
+                    searchforcastsweather();
+                }
+                return false;
+            }
+        });
 
         forecasttv = (TextView) findViewById(R.id.forecast);
         reporttime1 = (TextView) findViewById(R.id.reporttime1);

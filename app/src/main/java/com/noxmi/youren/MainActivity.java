@@ -4,17 +4,13 @@ import android.Manifest;
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.app.DownloadManager;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.location.Location;
 import android.net.Uri;
-import android.nfc.Tag;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -23,8 +19,6 @@ import android.provider.Settings;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.webkit.WebView;
-import android.webkit.WebViewClient;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -54,23 +48,20 @@ import com.amap.api.services.weather.LocalWeatherLive;
 import com.amap.api.services.weather.LocalWeatherLiveResult;
 import com.amap.api.services.weather.WeatherSearch;
 import com.amap.api.services.weather.WeatherSearchQuery;
+import com.noxmi.youren.basicmap.WeatherSearchActivity;
+import com.noxmi.youren.basicmap.weatherpic;
 import com.noxmi.youren.card.FlipViewPaper;
 import com.noxmi.youren.gonglue.gongluemain;
+import com.noxmi.youren.location.LocationModeSourceActivity;
 import com.noxmi.youren.setting.settingmain;
 import com.noxmi.youren.update.download;
 import com.noxmi.youren.update.updateinfo;
 import com.noxmi.youren.util.CommonUtils;
-import com.noxmi.youren.basicmap.WeatherSearchActivity;
-import com.noxmi.youren.location.LocationModeSourceActivity;
 import com.noxmi.youren.util.ToastUtil;
-import com.noxmi.youren.update.updateinfo;
 
-import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -104,7 +95,9 @@ public class MainActivity extends Activity
     ArrayList<View> views=new ArrayList<>();//卡片容器
     LinearLayout Downbuttontab,Wethertab;//按钮框，天气框
     int preposirion=0//前一个卡片位置翻页按钮隐形判断
-            ,currentPage;//现在卡片位置
+            ,currentPage//现在卡片位置
+            ,MAX=0;
+    private int POIcurrentPage = 0;// 当前页面，从0开始计数
     private TextView reporttime1,weather,Temperature,wind,humidity//天气简版
                         ,city;//城市名字板
     private WeatherSearchQuery mquery;//天气查询
@@ -116,6 +109,7 @@ public class MainActivity extends Activity
     private PoiSearch.Query query;// Poi查询条件类
     private PoiSearch poiSearch;// POI搜索
     private PoiResult poiResult; // poi返回的结果
+    FlipViewPaper flipViewPaper;
     public static final String LatestUrl="https://api.github.com/repos/NOXMI/youren/releases/latest";
     Bitmap bitmap;//得到获取的图片
 
@@ -123,7 +117,6 @@ public class MainActivity extends Activity
          @Override
          public void handleMessage(Message msg) {
              super.handleMessage(msg);
-             //show.setImageBitmap(bitmap);
          }
      },
     apkdownloadhandler=new Handler() {//apk更新下载
@@ -257,7 +250,7 @@ public class MainActivity extends Activity
     }
     //初始化
     public void inition(){
-        show=(ImageView) findViewById(R.id.SHOW);
+        show=(ImageView) findViewById(R.id.weatherSHOW);
         thread.start();
         updatecheck.start();//检查更新
 
@@ -608,11 +601,18 @@ public class MainActivity extends Activity
         if (rCode == AMapException.CODE_AMAP_SUCCESS) {
             if (weatherLiveResult != null && weatherLiveResult.getLiveResult() != null) {
                 weatherlive = weatherLiveResult.getLiveResult();
-                reporttime1.setText(weatherlive.getReportTime() + "发布");
                 weather.setText(weatherlive.getWeather());
                 Temperature.setText(weatherlive.getTemperature() + "°");
-                wind.setText(weatherlive.getWindDirection() + "风     " + weatherlive.getWindPower() + "级");
-                humidity.setText("湿度         " + weatherlive.getHumidity() + "%");
+                int i= weatherpic.picpick(weatherlive.getWeather());
+                InputStream is = null;
+                try {
+                    is = this.getResources().getAssets().open("weatherpic/pic ("+i+").png");
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                Bitmap bitmap = BitmapFactory.decodeStream(is);
+                show.setImageBitmap(bitmap);
+
             } else {
                 ToastUtil.show(MainActivity.this, R.string.no_result);
             }
@@ -637,7 +637,8 @@ public class MainActivity extends Activity
                     List<SuggestionCity> suggestionCities = poiResult
                             .getSearchSuggestionCitys();// 当搜索不到poiitem数据时，会返回含有搜索关键字的城市信息
                     if (poiItems != null && poiItems.size() > 0) {
-                        Poirefresh(poiResult);
+                        if(POIcurrentPage==0) Poirefresh(poiResult);
+                        else cardset(poiResult,10);
                     } else if (suggestionCities != null
                             && suggestionCities.size() > 0) {
                         ToastUtil.show(this,
@@ -665,11 +666,12 @@ public class MainActivity extends Activity
      * 开始进行poi搜索
      */
     protected void doSearchQuery() {
-        currentPage = 0;
+        POIcurrentPage = 0;
         query = new PoiSearch.Query("旅游", "", cityname);
         // 第一个参数表示搜索字符串，第二个参数表示poi搜索类型，第三个参数表示poi搜索区域（空字符串代表全国）
         query.setPageSize(10);// 设置每页最多返回多少条poiitem
-        query.setPageNum(currentPage);// 设置查第一页
+        query.setPageNum(POIcurrentPage);// 设置查第一页
+        query.setExtensions("all");
 
         poiSearch = new PoiSearch(this, query);
         poiSearch.setOnPoiSearchListener(this);
@@ -678,8 +680,10 @@ public class MainActivity extends Activity
     //poi卡片
     public void Poirefresh(PoiResult POIR){
         for(int i=0;i<10;i++){
-            list.add("test"+i);
+            list.add("card"+i);
         }
+        MAX=list.size()-2;
+
         viewPager = (ViewPager) findViewById(R.id.viewpager);
         CoordinatorLayout.LayoutParams params = (CoordinatorLayout.LayoutParams) viewPager.getLayoutParams();
         params.width= CommonUtils.getScreenWidth(this)-CommonUtils.dp2px(this,80);
@@ -687,32 +691,10 @@ public class MainActivity extends Activity
                 CommonUtils.dp2px(this,20+16),
                 CommonUtils.dp2px(this,16),
                 CommonUtils.dp2px(this,20+16));
+        flipViewPaper=new FlipViewPaper(views);
         viewPager.setLayoutParams(params);
         viewPager.setPageMargin(CommonUtils.dp2px(this,8));
-        for(int i=0;i<list.size(); i++){
-            CardView cardView= (CardView) LayoutInflater.from(this).inflate(R.layout.cardview_item,null,false);
-            TextView textView=(TextView) cardView.findViewById(R.id.tv_name);
-            textView.setText(
-                    "名称:"+POIR.getPois().get(i).getTitle()+ "\n"+
-                    "地址:"+POIR.getPois().get(i).getSnippet()+ "\n"+
-                    "商圈:"+POIR.getPois().get(i).getBusinessArea()+ "\n"+
-                    "导航:"+POIR.getPois().get(i).getDirection()+ "\n"+
-                    "网页"+POIR.getPois().get(i).getWebsite()+"\n"+
-                    "图片数量："+POIR.getPois().get(i).getPhotos().size()+"\n"+
-                    POIR.getSearchSuggestionCitys().size());
-            //ImageView IMG=(ImageView)cardView.findViewById(R.id.SITEIMG) ;
-            //IMG.setImageBitmap(bitmap);
-            cardView.setTag(textView);
-            views.add(cardView);
-
-            textView.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    Log.e("clic","clicked");
-                }
-            });
-        }
-        FlipViewPaper flipViewPaper=new FlipViewPaper(views);
+        nextPAGE();
         viewPager.setAdapter(flipViewPaper);
         viewPager.setOffscreenPageLimit(2);
         viewPager.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
@@ -727,6 +709,12 @@ public class MainActivity extends Activity
                     Downbuttontab.animate().alpha(1).setDuration(500).setListener(null);
                 }
                 preposirion=position;
+                Log.e("MAX",MAX+"  "+position);
+                if(position>=MAX)
+                {
+                    nextPAGE();
+                    MAX=flipViewPaper.getCount()-1;
+                }
             }
 
             @Override
@@ -740,21 +728,40 @@ public class MainActivity extends Activity
             }
         });
     }
-    //图片设置
-    public Bitmap PICSET(){
-        Bitmap BM=null;
-        try{
-            URL url=new URL("https://img1.qunarzz.com/travel/d8/1702/85/8eba3c25781398b5.jpg_r_680x510x95_839186f7.jpg");
-            // 从URL获取对应资源的 InputStream
-            InputStream inputStream = url.openStream();
-            // 用inputStream来初始化一个Bitmap 虽然此处是Bitmap，但是URL不一定非得是Bitmap
-            BM = BitmapFactory.decodeStream(inputStream);
-            // 关闭 InputStream
-            inputStream.close();
-            return BM;
-        }catch (IOException e) {
-            e.printStackTrace();
+    public void nextPAGE() {
+        if (query != null && poiSearch != null && poiResult != null) {
+            if (poiResult.getPageCount() - 1 > POIcurrentPage) {
+                POIcurrentPage++;
+                query.setPageNum(POIcurrentPage);// 设置查后一页
+                poiSearch.searchPOIAsyn();
+            } else {
+                ToastUtil.show(MainActivity.this,
+                        R.string.no_result);
+            }
         }
-        return BM;
+    }
+    public void cardset(PoiResult POIR,int add){
+        List<PoiItem> poiItems = poiResult.getPois();
+        Log.e("size",poiItems.size()+"");
+        for(int i=0;i<poiItems.size(); i++) {
+            CardView cardView = (CardView) LayoutInflater.from(this).inflate(R.layout.cardview_item, null, false);
+            TextView textView = (TextView) cardView.findViewById(R.id.tv_name);
+            ImageView IMG=(ImageView) cardView.findViewById(R.id.SITEIMG);
+            textView.setText(POIR.getPois().get(i).getTitle() + "\n" +
+                            "地址: " + POIR.getPois().get(i).getSnippet());
+            if(!POIR.getPois().get(i).getPhotos().isEmpty()){
+                Log.e("nasd","asd");
+            }
+
+            textView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    Log.e("clic","clicked"+textView.getText());
+                }
+            });
+            cardView.setTag(textView);
+            views.add(cardView);
+        }
+        flipViewPaper.notifyDataSetChanged();
     }
 }

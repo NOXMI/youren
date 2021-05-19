@@ -20,8 +20,8 @@ import de.hdodenhof.circleimageview.CircleImageView;
 
 public class gonglueadapter extends RecyclerView.Adapter<gonglueadapter.ViewHolder> {
 
-        private Context mContext;
-        private List<gonglueinfo> mgongluelist;
+    private Context mContext;
+    private List<gonglueinfo> mgongluelist;
     private OnItemClickListener mItemClickListener;
         static class ViewHolder extends RecyclerView.ViewHolder{
             CardView cardView;

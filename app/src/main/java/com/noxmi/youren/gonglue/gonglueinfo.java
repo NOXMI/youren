@@ -23,7 +23,8 @@ public class gonglueinfo {
             icon_view,//阅读数
             icon_love,//点赞数
             icon_comment,//评论数
-            picurl;//图片url
+            picurl,//图片url
+            userurl;//用户url
     private Bitmap BM=null,BM2=null;
 
     public void setBiaoti(String biaoti) {
@@ -73,7 +74,8 @@ public class gonglueinfo {
     public void setTheurl(String theurl) {
         this.theurl = theurl;
     }
-
+    public void setUserurl(String u)
+    {this.userurl=u;}
     public void setTrip(String trip) {
         this.trip = trip;
     }
@@ -127,6 +129,7 @@ public class gonglueinfo {
     public String getTrip() {
         return trip;
     }
+    public String getUserurl(){return userurl;}
     public void setbitmap(String strurl){
         new Thread(new Runnable() {
             @Override

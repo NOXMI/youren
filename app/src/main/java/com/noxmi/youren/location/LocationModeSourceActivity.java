@@ -1,9 +1,11 @@
 package com.noxmi.youren.location;
 
 import android.app.Activity;
+import android.graphics.Color;
 import android.location.Location;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.View;
 import android.view.Window;
 import android.widget.AdapterView;
@@ -11,17 +13,24 @@ import android.widget.ArrayAdapter;
 import android.widget.RadioGroup;
 import android.widget.RadioGroup.OnCheckedChangeListener;
 import android.widget.Spinner;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.amap.api.maps.AMap;
+import com.amap.api.maps.AMapUtils;
 import com.amap.api.maps.MapView;
+import com.amap.api.maps.model.BitmapDescriptorFactory;
+import com.amap.api.maps.model.Marker;
+import com.amap.api.maps.model.MarkerOptions;
 import com.amap.api.maps.model.MyLocationStyle;
+import com.amap.api.maps.model.NaviPara;
+import com.amap.api.maps.model.Poi;
 import com.noxmi.youren.R;
 
 /**
  * AMapV2地图中介绍定位几种类型
  */
-public class LocationModeSourceActivity extends Activity implements AMap.OnMyLocationChangeListener, AdapterView.OnItemSelectedListener {
+public class LocationModeSourceActivity extends Activity implements AMap.OnMyLocationChangeListener, AdapterView.OnItemSelectedListener, AMap.OnPOIClickListener, AMap.OnMarkerClickListener {
 	private AMap aMap;
 	private MapView mapView;
 	private Spinner spinnerGps;
@@ -51,8 +60,7 @@ public class LocationModeSourceActivity extends Activity implements AMap.OnMyLoc
 		}
 
 		spinnerGps = (Spinner) findViewById(R.id.spinner_gps);
-		ArrayAdapter<String> adapter = new ArrayAdapter<String>(this,
-				android.R.layout.simple_spinner_item, itemLocationTypes);
+		ArrayAdapter<String> adapter = new ArrayAdapter<String>(this,android.R.layout.simple_spinner_item, itemLocationTypes);
 		adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
 		spinnerGps.setAdapter(adapter);
 
@@ -60,6 +68,9 @@ public class LocationModeSourceActivity extends Activity implements AMap.OnMyLoc
 
 		//设置SDK 自带定位消息监听
 		aMap.setOnMyLocationChangeListener(this);
+		//地图点击
+		aMap.setOnPOIClickListener(this);
+		aMap.setOnMarkerClickListener(this);
 
 
 	}
@@ -186,5 +197,39 @@ public class LocationModeSourceActivity extends Activity implements AMap.OnMyLoc
 			Log.e("amap", "定位失败");
 			Toast.makeText(this,"定位失败",Toast.LENGTH_SHORT);
 		}
+	}
+
+	@Override
+	public boolean onMarkerClick(Marker marker) {
+		// 构造导航参数
+		NaviPara naviPara = new NaviPara();
+		// 设置终点位置
+		naviPara.setTargetPoint(marker.getPosition());
+		// 设置导航策略，这里是避免拥堵
+		naviPara.setNaviStyle(AMapUtils.DRIVING_AVOID_CONGESTION);
+		try {
+			// 调起高德地图导航
+			AMapUtils.openAMapNavi(naviPara, getApplicationContext());
+		} catch (com.amap.api.maps.AMapException e) {
+			// 如果没安装会进入异常，调起下载页面
+			AMapUtils.getLatestAMapApp(getApplicationContext());
+		}
+		aMap.clear();
+		return false;
+	}
+
+	@Override
+	public void onPOIClick(Poi poi) {
+		aMap.clear();
+		Log.i("MY", poi.getPoiId()+poi.getName());
+		MarkerOptions markOptiopns = new MarkerOptions();
+		markOptiopns.position(poi.getCoordinate());
+		TextView textView = new TextView(getApplicationContext());
+		textView.setText("到"+poi.getName()+"去");
+		textView.setGravity(Gravity.CENTER);
+		textView.setTextColor(Color.BLACK);
+		textView.setBackgroundResource(R.drawable.custom_info_bubble);
+		markOptiopns.icon(BitmapDescriptorFactory.fromView(textView));
+		aMap.addMarker(markOptiopns);
 	}
 }
