@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     package="com.noxmi.youren">
 
     <application
@@ -27,6 +28,8 @@
         <activity android:name=".setting.settingmain"/>
         <!--攻略界面-->
         <activity android:name=".gonglue.gongluemain"/>
+        <activity android:name=".out.outlistener"
+            tools:ignore="Instantiatable" />
         <meta-data android:name="com.amap.api.v2.apikey" android:value="3152b6952ef0eef7411af25df125549e">
         </meta-data>
         <service android:name="com.amap.api.location.APSService"></service>

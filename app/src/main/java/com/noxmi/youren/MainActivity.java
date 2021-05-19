@@ -700,8 +700,8 @@ public class MainActivity extends Activity
                     "网页"+POIR.getPois().get(i).getWebsite()+"\n"+
                     "图片数量："+POIR.getPois().get(i).getPhotos().size()+"\n"+
                     POIR.getSearchSuggestionCitys().size());
-            ImageView IMG=(ImageView)cardView.findViewById(R.id.SITEIMG) ;
-            IMG.setImageBitmap(bitmap);
+            //ImageView IMG=(ImageView)cardView.findViewById(R.id.SITEIMG) ;
+            //IMG.setImageBitmap(bitmap);
             cardView.setTag(textView);
             views.add(cardView);
 
@@ -714,7 +714,8 @@ public class MainActivity extends Activity
         }
         FlipViewPaper flipViewPaper=new FlipViewPaper(views);
         viewPager.setAdapter(flipViewPaper);
-        viewPager.setOffscreenPageLimit(2);viewPager.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
+        viewPager.setOffscreenPageLimit(2);
+        viewPager.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
             @Override
             public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {//position第几页
 
