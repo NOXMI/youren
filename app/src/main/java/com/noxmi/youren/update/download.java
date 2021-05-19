@@ -30,7 +30,7 @@ public class download {
 
         AlertDialog.Builder normalDialog = new AlertDialog.Builder(context);
         normalDialog.setTitle("更新提示：");
-        normalDialog.setMessage("发现更新版本: "+uppackname+ System.getProperty ("line.separator")+
+        normalDialog.setMessage("发现更新版本: "+uppackname+"\n"+
                 "更新日志： "+updialog);
         normalDialog.setIcon(R.mipmap.ic_launcher);
         normalDialog.setCancelable(true);

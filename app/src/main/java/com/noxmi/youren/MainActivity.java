@@ -30,9 +30,12 @@ import androidx.coordinatorlayout.widget.CoordinatorLayout;
 import androidx.viewpager.widget.ViewPager;
 
 import com.amap.api.maps.AMap;
+import com.amap.api.maps.AMapUtils;
 import com.amap.api.maps.MapView;
 import com.amap.api.maps.MapsInitializer;
+import com.amap.api.maps.model.LatLng;
 import com.amap.api.maps.model.MyLocationStyle;
+import com.amap.api.maps.model.NaviPara;
 import com.amap.api.services.core.AMapException;
 import com.amap.api.services.core.LatLonPoint;
 import com.amap.api.services.core.PoiItem;
@@ -58,6 +61,7 @@ import com.noxmi.youren.update.download;
 import com.noxmi.youren.update.updateinfo;
 import com.noxmi.youren.util.CommonUtils;
 import com.noxmi.youren.util.ToastUtil;
+import com.noxmi.youren.mainpicdownload.picdownlod;
 
 import org.json.JSONObject;
 
@@ -86,6 +90,7 @@ public class MainActivity extends Activity
             ,uppackname//安装包名称
             ,Currenttagname//现版本名字
             ,DownloadUrl;//下载链接
+    public String[] urltemp1;
     Button ditu,zhuye,geren;//主页按钮
     ViewPager viewPager;//卡片载体
     AMap mainaMap;//主页地图，天气定位载体
@@ -133,7 +138,7 @@ public class MainActivity extends Activity
          public void run() {
              super.run();
              try {
-                 URL url = new URL("https://img1.qunarzz.com/travel/d4/1704/af/9ec6d621b3f92cb5.jpg_160x120x95_ba3e7b3c.jpg");
+                 URL url = new URL("https://store.is.autonavi.com/showpic/2340ed5d2cc172b24e2aab60c1a3c36a");
                  InputStream inputStream = url.openStream();
                  bitmap = BitmapFactory.decodeStream(inputStream);
                  handler.sendEmptyMessage(1);//主线程中是不能更新的，所以得发送消息到handler，到handleMessage方法中设置获取得到的图片
@@ -638,7 +643,7 @@ public class MainActivity extends Activity
                             .getSearchSuggestionCitys();// 当搜索不到poiitem数据时，会返回含有搜索关键字的城市信息
                     if (poiItems != null && poiItems.size() > 0) {
                         if(POIcurrentPage==0) Poirefresh(poiResult);
-                        else cardset(poiResult,10);
+                        else cardset(poiResult);
                     } else if (suggestionCities != null
                             && suggestionCities.size() > 0) {
                         ToastUtil.show(this,
@@ -709,7 +714,6 @@ public class MainActivity extends Activity
                     Downbuttontab.animate().alpha(1).setDuration(500).setListener(null);
                 }
                 preposirion=position;
-                Log.e("MAX",MAX+"  "+position);
                 if(position>=MAX)
                 {
                     nextPAGE();
@@ -740,23 +744,70 @@ public class MainActivity extends Activity
             }
         }
     }
-    public void cardset(PoiResult POIR,int add){
+    public void cardset(PoiResult POIR){
         List<PoiItem> poiItems = poiResult.getPois();
-        Log.e("size",poiItems.size()+"");
         for(int i=0;i<poiItems.size(); i++) {
             CardView cardView = (CardView) LayoutInflater.from(this).inflate(R.layout.cardview_item, null, false);
             TextView textView = (TextView) cardView.findViewById(R.id.tv_name);
             ImageView IMG=(ImageView) cardView.findViewById(R.id.SITEIMG);
             textView.setText(POIR.getPois().get(i).getTitle() + "\n" +
                             "地址: " + POIR.getPois().get(i).getSnippet());
-            if(!POIR.getPois().get(i).getPhotos().isEmpty()){
-                Log.e("nasd","asd");
+            LatLonPoint LP=POIR.getPois().get(i).getLatLonPoint();
+            if(!poiItems.get(i).getPhotos().isEmpty())
+            {
+                Bitmap BM1=null;
+                String[] temp=POIR.getPois().get(i).getPhotos().get(0).getUrl().split(":");
+                picdownlod PD=new picdownlod();
+                PD.setuserbimap("https:"+temp[1]);
+                IMG.setImageBitmap(PD.getBM());
+                Handler handler = new Handler(){
+                    @Override
+                    public void handleMessage(Message msg) {
+                        super.handleMessage(msg);
+                        IMG.setImageBitmap(bitmap);
+                    }
+                };
+                new Thread(){
+                    @Override
+                    public void run() {
+                        super.run();
+                        try {
+                            URL url = new URL("https:"+temp[1]);
+                            InputStream inputStream = url.openStream();
+                            bitmap = BitmapFactory.decodeStream(inputStream);
+                            handler.sendEmptyMessage(1);
+                            inputStream.close();
+                        } catch (MalformedURLException e) {
+                            e.printStackTrace();
+                            Log.e("fail","MalformedURLException");
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                            Log.e("fail","IOException");
+                        }
+                    }
+                }.start();
             }
 
             textView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    Log.e("clic","clicked"+textView.getText());
+                    Log.e("clic","clicked"+textView.getText()+LP);
+
+                    // 构造导航参数
+                    NaviPara naviPara = new NaviPara();
+                    // 设置终点位置
+                    LatLng LL=new LatLng(LP.getLatitude(),LP.getLongitude());
+                    naviPara.setTargetPoint(LL);
+                    // 设置导航策略，这里是避免拥堵
+                    naviPara.setNaviStyle(AMapUtils.DRIVING_AVOID_CONGESTION);
+                    try {
+                        // 调起高德地图导航
+                        AMapUtils.openAMapNavi(naviPara, getApplicationContext());
+                    } catch (com.amap.api.maps.AMapException e) {
+                        // 如果没安装会进入异常，调起下载页面
+                        AMapUtils.getLatestAMapApp(getApplicationContext());
+                    }
+
                 }
             });
             cardView.setTag(textView);
