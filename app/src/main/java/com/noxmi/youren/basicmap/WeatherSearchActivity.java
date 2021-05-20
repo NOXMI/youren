@@ -4,16 +4,12 @@ import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.Intent;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.KeyEvent;
 import android.view.inputmethod.EditorInfo;
 import android.widget.EditText;
 import android.widget.TextView;
 
 import com.amap.api.services.core.AMapException;
-import com.amap.api.services.core.LatLonPoint;
-import com.amap.api.services.geocoder.GeocodeSearch;
-import com.amap.api.services.geocoder.RegeocodeQuery;
 import com.amap.api.services.weather.LocalDayWeatherForecast;
 import com.amap.api.services.weather.LocalWeatherForecast;
 import com.amap.api.services.weather.LocalWeatherForecastResult;
@@ -45,7 +41,7 @@ public class WeatherSearchActivity extends Activity implements OnWeatherSearchLi
     private LocalWeatherForecast weatherforecast;
     private List<LocalDayWeatherForecast> forecastlist = null;
     private String cityname = "北京市";//天气搜索的城市，可以写名称或adcode；
-    private ProgressDialog progDialog = null;
+    private final ProgressDialog progDialog = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -61,15 +57,15 @@ public class WeatherSearchActivity extends Activity implements OnWeatherSearchLi
         //数据传输
         Intent intent = getIntent();
         String citynameString = intent.getStringExtra("citynameString");
-        String[] Cname=citynameString.split("省|市");
-        if (citynameString.indexOf("省") >= 0)  cityname=Cname[1]+"市";//省区
-        else cityname=Cname[0]+"市";//直辖市
+        String[] Cname = citynameString.split("省|市");
+        if (citynameString.indexOf("省") >= 0) cityname = Cname[1] + "市";//省区
+        else cityname = Cname[0] + "市";//直辖市
         city.setText(cityname);
         city.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             @Override
             public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
                 if (actionId == EditorInfo.IME_ACTION_DONE) {
-                    cityname=city.getText().toString();
+                    cityname = city.getText().toString();
                     searchliveweather();
                     searchforcastsweather();
                 }

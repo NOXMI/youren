@@ -27,10 +27,11 @@ import java.util.List;
 
 public class gongluemain extends Activity {
     RecyclerView rl;
-    List<gonglueinfo> list=new ArrayList<gonglueinfo>();;
-    List<gonglueinfo> listTemp=new ArrayList<gonglueinfo>();
+    List<gonglueinfo> list = new ArrayList<gonglueinfo>();
+    List<gonglueinfo> listTemp = new ArrayList<gonglueinfo>();
     String gonglueURL;
-    int MAX=10;
+    int MAX = 10;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
 
@@ -41,12 +42,12 @@ public class gongluemain extends Activity {
         init();
     }
 
-    void init(){
+    void init() {
 
         rl = findViewById(R.id.rl);
         GridLayoutManager layoutManager = new GridLayoutManager(this, 1);
         rl.setLayoutManager(layoutManager);
-        for(int i=0;i<11;i++){
+        for (int i = 0; i < 11; i++) {
             listTemp.add(list.get(i));
             listTemp.get(i).setbitmap(listTemp.get(i).getPicurl());
             listTemp.get(i).setuserbimap(listTemp.get(i).getUserurl());
@@ -55,10 +56,10 @@ public class gongluemain extends Activity {
         adapter.setOnItemClickListener(new gonglueadapter.OnItemClickListener() {
             @Override
             public void onItemClick(String URL) {
-                gonglueURL=URL;
+                gonglueURL = URL;
 
-                Uri uri=Uri.parse(gonglueURL);
-                Intent intent=new Intent(Intent.ACTION_VIEW,uri);
+                Uri uri = Uri.parse(gonglueURL);
+                Intent intent = new Intent(Intent.ACTION_VIEW, uri);
                 startActivity(intent);
             }
         });
@@ -72,16 +73,16 @@ public class gongluemain extends Activity {
             @Override
             public void onScrolled(@NonNull @NotNull RecyclerView recyclerView, int dx, int dy) {
                 super.onScrolled(recyclerView, dx, dy);
-                Log.e("position",layoutManager.findLastCompletelyVisibleItemPosition()+"");
-                if(layoutManager.findLastCompletelyVisibleItemPosition()>=MAX)
-                {
+                Log.e("position", layoutManager.findLastCompletelyVisibleItemPosition() + "");
+                if (layoutManager.findLastCompletelyVisibleItemPosition() >= MAX) {
                     fresh(MAX);
-                    MAX+=10;
+                    MAX += 10;
                     adapter.notifyItemChanged(MAX);
                 }
             }
         });
     }
+
     private void readCsv() {
         try {
             InputStreamReader inputReader = new InputStreamReader(getResources().getAssets().open("data1.csv"));
@@ -112,12 +113,12 @@ public class gongluemain extends Activity {
             e.printStackTrace();
         }
     }
-    void fresh(int M){
-        for(int i=1;i<=10;i++)
-        {
-            list.get(i+M).setbitmap(list.get(i+M).getPicurl());
-            list.get(i+M).setuserbimap(list.get(i+M).getUserurl());
-            listTemp.add(list.get(i+M));
+
+    void fresh(int M) {
+        for (int i = 1; i <= 10; i++) {
+            list.get(i + M).setbitmap(list.get(i + M).getPicurl());
+            list.get(i + M).setuserbimap(list.get(i + M).getUserurl());
+            listTemp.add(list.get(i + M));
         }
     }
 }

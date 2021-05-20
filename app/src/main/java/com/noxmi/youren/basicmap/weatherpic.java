@@ -2,8 +2,7 @@ package com.noxmi.youren.basicmap;
 
 public class weatherpic {
     public static int picpick(String Str) {
-        switch (Str)
-        {
+        switch (Str) {
             case "晴":
                 return 22;
             case "少云":

@@ -2,22 +2,15 @@ package com.noxmi.youren.setting;
 
 import android.app.Activity;
 import android.content.Intent;
-import android.media.Image;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
-import android.view.Window;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.ListView;
-import android.widget.TextView;
-import android.widget.Toast;
 
-import com.amap.api.maps.MapView;
-import com.noxmi.youren.MainActivity;
 import com.noxmi.youren.R;
-import com.noxmi.youren.basicmap.WeatherSearchActivity;
 import com.noxmi.youren.update.download;
 import com.noxmi.youren.update.updateinfo;
 

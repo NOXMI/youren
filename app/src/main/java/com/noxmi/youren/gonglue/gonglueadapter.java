@@ -1,8 +1,6 @@
 package com.noxmi.youren.gonglue;
 
 import android.content.Context;
-import android.os.Handler;
-import android.os.Message;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;

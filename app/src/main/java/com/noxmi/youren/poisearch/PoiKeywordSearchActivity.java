@@ -72,8 +72,7 @@ public class PoiKeywordSearchActivity extends FragmentActivity implements
 	 */
 	private void init() {
 		if (aMap == null) {
-			aMap = ((SupportMapFragment) getSupportFragmentManager()
-					.findFragmentById(R.id.map)).getMap();
+			aMap = ((SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map)).getMap();
 			setUpMap();
 		}
 	}
