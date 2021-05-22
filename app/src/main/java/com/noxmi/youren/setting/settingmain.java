@@ -19,7 +19,7 @@ public class settingmain extends Activity {
     ImageView t;
     //数据传输
     String Tagname, updialog,uppackname,Currenttagname,DownloadUrl;
-    String[] data={"检查更新"};
+    String[] data={"检查更新","反馈问题请联系\nqq875675620"};
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -42,6 +42,7 @@ public class settingmain extends Activity {
                 Log.e("name","mane");
             }
         });
+        data[0]+="\n当前版本"+Tagname;
         ArrayAdapter<String> adapter=new ArrayAdapter<String>(this,android.R.layout.simple_list_item_1,data);
         LIST=(ListView)findViewById(R.id.LIST);
         LIST.setAdapter(adapter);

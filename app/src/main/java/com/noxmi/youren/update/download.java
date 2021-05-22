@@ -27,7 +27,7 @@ public class download {
     //更新询问
     public static void downloadask(Context context, String uppackname, String updialog, String DownloadUrl, String Tagname) {
 
-        AlertDialog.Builder normalDialog = new AlertDialog.Builder(context);
+            AlertDialog.Builder normalDialog = new AlertDialog.Builder(context);
         normalDialog.setTitle("更新提示：");
         normalDialog.setMessage("发现更新版本: " + uppackname + "\n" +
                 "更新日志： " + updialog);

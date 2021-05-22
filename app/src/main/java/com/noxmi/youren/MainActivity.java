@@ -56,7 +56,6 @@ import com.noxmi.youren.basicmap.weatherpic;
 import com.noxmi.youren.card.FlipViewPaper;
 import com.noxmi.youren.gonglue.gongluemain;
 import com.noxmi.youren.location.LocationModeSourceActivity;
-import com.noxmi.youren.mainpicdownload.picdownlod;
 import com.noxmi.youren.setting.settingmain;
 import com.noxmi.youren.update.download;
 import com.noxmi.youren.update.updateinfo;
@@ -93,7 +92,6 @@ public class MainActivity extends Activity
             , uppackname//安装包名称
             , Currenttagname//现版本名字
             , DownloadUrl;//下载链接
-    public String[] urltemp1;
     public GeocodeSearch geocoderSearch;//逆向定位
     public Location mainlocation;//主要定位
     //权限检查
@@ -269,7 +267,7 @@ public class MainActivity extends Activity
     //初始化
     public void inition() {
         show = (ImageView) findViewById(R.id.weatherSHOW);
-        thread.start();
+        //thread.start();
         updatecheck.start();//检查更新
 
         myLocationStyle = new MyLocationStyle();
@@ -335,6 +333,8 @@ public class MainActivity extends Activity
                 // 定位类型，可能为GPS WIFI等，具体可以参考官网的定位SDK介绍
                 int locationType = bundle.getInt(MyLocationStyle.LOCATION_TYPE);
                 mainlocation = location;
+                Log.e("llenr",mainlocation.toString());
+
 
                 /*
                 errorCode
@@ -635,7 +635,7 @@ public class MainActivity extends Activity
     }
 
     @Override
-    public void onPoiSearched(PoiResult result, int rCode) {
+        public void onPoiSearched(PoiResult result, int rCode) {
         if (rCode == AMapException.CODE_AMAP_SUCCESS) {
             if (result != null && result.getQuery() != null) {// 搜索poi的结果
                 if (result.getQuery().equals(query)) {// 是否是同一条
@@ -688,7 +688,7 @@ public class MainActivity extends Activity
     }
 
     //poi卡片
-    public void Poirefresh(PoiResult POIR) {
+        public void Poirefresh(PoiResult POIR) {
         for (int i = 0; i < 10; i++) {
             list.add("card" + i);
         }
@@ -755,15 +755,14 @@ public class MainActivity extends Activity
             CardView cardView = (CardView) LayoutInflater.from(this).inflate(R.layout.cardview_item, null, false);
             TextView textView = (TextView) cardView.findViewById(R.id.tv_name);
             ImageView IMG = (ImageView) cardView.findViewById(R.id.SITEIMG);
-            textView.setText(POIR.getPois().get(i).getTitle() + "\n" +
-                    "地址: " + POIR.getPois().get(i).getSnippet());
+            textView.setText(POIR.getPois().get(i).getAdName()+POIR.getPois().get(i).getTitle() + "\n" +
+                    "地址: " + POIR.getPois().get(i).getSnippet()+"\n"+
+                    "类型: "+POIR.getPois().get(i).getTypeDes()+"\n"+"电话"+POIR.getPois().get(i).getTel()
+            );
             LatLonPoint LP = POIR.getPois().get(i).getLatLonPoint();
             if (!poiItems.get(i).getPhotos().isEmpty()) {
                 Bitmap BM1 = null;
                 String[] temp = POIR.getPois().get(i).getPhotos().get(0).getUrl().split(":");
-                picdownlod PD = new picdownlod();
-                PD.setuserbimap("https:" + temp[1]);
-                IMG.setImageBitmap(PD.getBM());
                 Handler handler = new Handler() {
                     @Override
                     public void handleMessage(Message msg) {
